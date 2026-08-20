@@ -5,7 +5,7 @@ export type CreateProduct = Omit<Product, "id">;
 export type UpdateProduct = Partial<Product>;
 
 export const productsService = {
-  getAll: () => apiClient<Product[]>("/produtos"),
+  getAll: () => apiClient<Product[]>("/produtos?_page=1&_limit=10"),
   getById: (id: number) => apiClient<Product>(`/produtos/${id}`),
   create: (data: CreateProduct) =>
     apiClient<Product>("/produtos", {
