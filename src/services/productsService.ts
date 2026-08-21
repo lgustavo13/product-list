@@ -1,11 +1,26 @@
 import type { Product } from "@/types";
-import { apiClient } from "./api";
+import { apiClient, apiClientWithHeaders } from "./api";
 
 export type CreateProduct = Omit<Product, "id">;
 export type UpdateProduct = Partial<Product>;
 
+export interface PaginatedResponse<T> {
+  data: T[];
+  totalCount: number;
+}
+
 export const productsService = {
-  getAll: () => apiClient<Product[]>("/produtos?_page=1&_limit=10"),
+  getAll: async (
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<PaginatedResponse<Product>> => {
+    const { data, headers } = await apiClientWithHeaders<Product[]>(
+      `/produtos?_page=${page}&_limit=${limit}`,
+    );
+    const totalCount = Number(headers.get("X-Total-Count") ?? 0);
+    return { data, totalCount };
+  },
+
   getById: (id: number) => apiClient<Product>(`/produtos/${id}`),
   create: (data: CreateProduct) =>
     apiClient<Product>("/produtos", {
@@ -30,3 +45,4 @@ export const productsService = {
       method: "DELETE",
     }),
 };
+
