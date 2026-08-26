@@ -1,5 +1,11 @@
 import { Button } from "@/components/ui/button";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Pagination,
   PaginationPrevious,
   PaginationNext,
@@ -9,11 +15,14 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
 import { useProducts } from "@/hooks/useProducts";
+import { Input } from "@base-ui/react";
+import { MoreHorizontalIcon } from "lucide-react";
 
 function App() {
   const {
@@ -21,8 +30,11 @@ function App() {
     isLoading,
     currentPage,
     totalPages,
+    search,
+    setSearch,
     nextPage,
     prevPage,
+    updateProduct,
     removeProduct,
   } = useProducts();
 
@@ -30,6 +42,13 @@ function App() {
     <main className="p-10">
       <h1 className="text-center text-xl mb-10">Página de Produtos</h1>
 
+      <Input
+        type="search"
+        placeholder="Buscar produto pelo nome..."
+        className="mb-10 border border-slate-400 rounded-xl p-1"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
       <Table>
         <TableHeader>
           <TableRow>
@@ -44,8 +63,20 @@ function App() {
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+              <TableCell
+                colSpan={5}
+                className="text-center py-8 text-muted-foreground"
+              >
                 Carregando...
+              </TableCell>
+            </TableRow>
+          ) : products.length === 0 ? (
+            <TableRow>
+              <TableCell
+                colSpan={5}
+                className="text-center py-8 text-muted-foreground"
+              >
+                Produto não encontrado
               </TableCell>
             </TableRow>
           ) : (
@@ -56,31 +87,62 @@ function App() {
                 <TableCell>{product.preco}</TableCell>
                 <TableCell>{product.estoque}</TableCell>
                 <TableCell>
-                  <Button onClick={() => removeProduct(product.id)}>
-                    Deletar
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      render={
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 cursor-pointer"
+                        >
+                          <MoreHorizontalIcon />
+                          <span className="sr-only">Open menu</span>
+                        </Button>
+                      }
+                    />
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => updateProduct(product.id, product)}
+                        className="cursor-pointer"
+                      >
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => removeProduct(product.id)}
+                        className="cursor-pointer"
+                      >
+                        Deletar
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))
           )}
         </TableBody>
+        <TableFooter className="flex">
+          <TableRow>
+            {totalPages > 1 && (
+              <Pagination className="mt-6">
+                <PaginationPrevious
+                  onClick={prevPage}
+                  disabled={currentPage === 1}
+                />
+
+                <PaginationInfo
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                />
+
+                <PaginationNext
+                  onClick={nextPage}
+                  disabled={currentPage === totalPages}
+                />
+              </Pagination>
+            )}
+          </TableRow>
+        </TableFooter>
       </Table>
-
-      {totalPages > 1 && (
-        <Pagination className="mt-6">
-          <PaginationPrevious
-            onClick={prevPage}
-            disabled={currentPage === 1}
-          />
-
-          <PaginationInfo currentPage={currentPage} totalPages={totalPages} />
-
-          <PaginationNext
-            onClick={nextPage}
-            disabled={currentPage === totalPages}
-          />
-        </Pagination>
-      )}
     </main>
   );
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { productsService } from "@/services/productsService";
+import { useDebounce } from "@/hooks/useDebounce";
 import type { Product } from "@/types";
 
 const ITEMS_PER_PAGE = 10;
@@ -10,6 +11,9 @@ export function useProducts() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
+  const [prevSearch, setPrevSearch] = useState(debouncedSearch);
 
   const fetchProducts = useCallback(async (page: number) => {
     try {
@@ -33,10 +37,26 @@ export function useProducts() {
     async function getProducts() {
       try {
         setIsLoading(true);
-        const { data, totalCount } = await productsService.getAll(
-          currentPage,
-          ITEMS_PER_PAGE,
-        );
+        setError(null);
+
+        let data: Product[];
+        let totalCount: number;
+
+        if (debouncedSearch.trim()) {
+          const result = await productsService.getByName(
+            debouncedSearch.trim(),
+          );
+          data = result.data;
+          totalCount = result.totalCount;
+        } else {
+          const result = await productsService.getAll(
+            currentPage,
+            ITEMS_PER_PAGE,
+          );
+          data = result.data;
+          totalCount = result.totalCount;
+        }
+
         if (!ignore) {
           setProducts(data);
           setTotalPages(Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE)));
@@ -57,7 +77,12 @@ export function useProducts() {
     return () => {
       ignore = true;
     };
-  }, [currentPage]);
+  }, [currentPage, debouncedSearch]);
+
+  if (debouncedSearch !== prevSearch) {
+    setPrevSearch(debouncedSearch);
+    setCurrentPage(1);
+  }
 
   const nextPage = () => {
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
@@ -95,6 +120,8 @@ export function useProducts() {
     error,
     currentPage,
     totalPages,
+    search,
+    setSearch,
     nextPage,
     prevPage,
     removeProduct,

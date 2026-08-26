@@ -22,6 +22,13 @@ export const productsService = {
   },
 
   getById: (id: number) => apiClient<Product>(`/produtos/${id}`),
+  getByName: async (name: string): Promise<PaginatedResponse<Product>> => {
+    const { data, headers } = await apiClientWithHeaders<Product[]>(
+      `/produtos?nome_like=${name}`,
+    );
+    const totalCount = Number(headers.get("X-Total-Count") ?? data.length);
+    return { data, totalCount };
+  },
   create: (data: CreateProduct) =>
     apiClient<Product>("/produtos", {
       method: "POST",
@@ -45,4 +52,3 @@ export const productsService = {
       method: "DELETE",
     }),
 };
-
